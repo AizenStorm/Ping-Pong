@@ -1,0 +1,213 @@
+<html>
+<head>
+<style>
+canvas{
+	background-color:#ffffff;
+    border: 2px solid black;
+    margin-left: 120px;
+}
+body{
+    font-family: "Comic Sans MS";
+}
+        
+</style>
+</head>
+<body onload="startGame()">
+
+<script>
+    var ball;
+    var rodr;
+    var rodl;
+    var score;
+    var jump_sound;
+    var toLeft = false;
+    var lcrash = false;
+    var rcrash = false;
+    var game_area = {
+        canvas: document.createElement("canvas"),
+        start: function () {
+            this.canvas.width = 1000;
+            this.canvas.height = 500;
+            this.context = this.canvas.getContext("2d");
+            this.frame_num = 0;
+            document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+            this.interval = setInterval(updateGameArea, 20);
+            window.addEventListener('keydown', function (e) {
+                game_area.key = e.keyCode;
+            })
+            window.addEventListener('keyup', function (e) {
+                game_area.key = false;
+            })
+        },
+        clear: function () {
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        },
+        stop: function () {
+            clearInterval(this.interval);
+        }
+    }
+
+    function component(width, height, x, y, color, type) {
+        this.type = type;
+        if (this.type == "image") {
+            this.image = new Image();
+            this.image.src = color;
+        }
+        this.width = width;
+        this.height = height;
+        this.x = x;
+        this.y = y;
+        this.speedX = 0;
+        this.speedY = 0;
+        this.update = function () {
+            ctx = game_area.context;
+            if (this.type === "text") {
+                ctx.font = this.width + " " + this.height;
+                ctx.fillStyle = color;
+                ctx.fillText(this.text, this.x, this.y);
+            }
+            else if (this.type == "image") {
+                ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+            }
+            else {
+                ctx.fillStyle = color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+        this.crash = function (other) {
+            var ball_left = this.x;
+            var ball_right = this.x + (this.width);
+            var ball_top = this.y;
+            var ball_bottom = this.y + (this.height);
+            var other_left = other.x;
+            var other_right = other.x + (other.width);
+            var other_top = other.y;
+            var other_bottom = other.y + (other.height);
+            if (!toLeft) {
+                if (ball_left > other_right || ball_right < other_left || ball_bottom < other_top || ball_top > other_bottom) {
+                    return false;
+                }
+                else {
+                    return true;
+                }
+            }
+            else {
+                if (ball_right < other_left || ball_left > other_right || ball_bottom < other_top || ball_top > other_bottom) {
+                    return false;
+                }
+                else {
+                    return true;
+                }
+            }
+        }
+        this.move = function () {
+
+            if (this.x > 0 && toLeft) {
+                this.x += this.speedX;
+            }
+            else if (this.x <= 0) {
+                toLeft = false;
+                this.speedX = 0;
+                game_area.stop();
+            }
+            else if (this.x < 970 && !toLeft) {
+                this.x -= this.speedX;
+            }
+            else if (this.x >= 970) {
+                toLeft = true;
+                this.speedX = 0;
+                game_area.stop();
+            }
+        }
+    }
+
+
+    function sound(src) {
+        this.sound = createElement("audio");
+        this.sound.src = src;
+        this.sound.setAttribute("preload", "auto");
+        this.sound.setAttribute("controls", "none");
+        this.sound.style.display = "none";
+        document.body.appendChild(this.sound);
+        this.play = function () {
+            this.sound.play();
+        }
+        this.stop = function () {
+            this.sound.pause();
+        }
+    }
+
+
+    function updateGameArea() {
+        if (ball.crash(rodr)) {
+            toLeft = true;
+            rcrash = true;
+        }
+        else {
+            rcrash = false;
+        }
+        if (ball.crash(rodl)) {
+            toLeft = false;
+            lcrash = true;
+        }
+        else {
+            lcrash = false;
+        }
+        game_area.clear();
+        game_area.frame_num++;
+        if (lcrash) {
+            rodr.y = Math.floor(Math.random() * (game_area.canvas.height - rodr.y));
+
+        }
+        if (rcrash) {
+            rodl.y = Math.floor(Math.random() * (game_area.canvas.height - rodl.y));
+        }
+        if (game_area.key && game_area.key == 38) {
+            if (toLeft) {
+                if (rodl.y > 0) {
+                    rodl.y -= 2;
+                }
+            }
+            else {
+                if (rodr.y > 0) {
+                    rodr.y -= 2;
+                }
+            }
+        }
+
+        if (game_area.key && game_area.key == 40) {
+        if (toLeft) {
+        if (rodl.y < game_area.canvas.height-rodl.height) {
+            rodl.y+=2;
+        }
+        }
+        else {
+        if (rodr.y > game_area.canvas.height-rodr.height) {
+            rodr.y+=2;
+        }
+        }
+
+        }
+        score.text = "Score: " + game_area.frame_num;
+        ball.move();
+        ball.update();
+        rodr.update();
+        rodl.update();
+        score.update();
+    }
+
+    function startGame() {
+        ball = new component(30, 35, 500, 220, "red");
+        ball.speedX = -5;
+        rodr = new component(10, 150, 990, 120, "green");
+        rodl = new component(10, 150, 0, 120, "green");
+        score = new component(60, 30, 930, 50, "black", "text");
+        game_area.start();
+    }
+</script>
+<div id="conatiner">
+</div>
+
+
+</body>
+</html>
